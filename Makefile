@@ -37,7 +37,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
+TARGET		:=	switch-time
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
@@ -46,10 +46,10 @@ INCLUDES	:=	include
 
 VERSION_MAJOR := 0
 VERSION_MINOR := 1
-VERSION_MICRO := 5
+VERSION_MICRO := 6
 
 APP_TITLE   := SwitchTime
-APP_AUTHOR  := 3096, thedax, cytraen, vonhabsbourg, izenn
+APP_AUTHOR  := ZHDreamer, 3096, thedax, cytraen, vonhabsbourg, izenn
 APP_VERSION := ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}
 
 #---------------------------------------------------------------------------------
