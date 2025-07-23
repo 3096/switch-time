@@ -158,7 +158,7 @@ bool toggleHBMenuPath(char* curPath, PadState* pad) {
 
 int main(int argc, char* argv[]) {
     consoleInit(NULL);
-    printf("SwitchTime v0.1.5\n\n");
+    printf("SwitchTime v0.1.6\n\n");
 
     padConfigureInput(8, HidNpadStyleSet_NpadStandard);
     PadState pad;
@@ -173,17 +173,22 @@ int main(int argc, char* argv[]) {
         return consoleExitWithMsg("Internet time sync is not enabled. Please enable it in System Settings.", &pad);
     }
 
+    int arrow_pos[] = {0, 5, 8, 11, 14, 17};
+    int arrow_len[] = {4, 2, 2,  2,  2,  2};
+
+    int arrow = 0;
+
     // Main loop
     while (appletMainLoop()) {
         printf(
             "\n\n"
             "Press:\n\n"
-            "UP/DOWN to change hour | LEFT/RIGHT to change day | X/B to 10 minutes\n"
-            "L/ZL to change month   | R/ZR to change year\n"
-            "A to confirm time      | Y to reset to current time (Cloudflare time server)\n"
-            "                       | + to quit\n\n\n");
+            "UP/DOWN to change by 1   | LEFT/RIGHT to change selection\n"
+            "L/ZL to quick decrease   | R/ZR to quick increase\n"
+            "A to confirm time        | Y to reset to current time (Cloudflare time server)\n"
+            "- to toggle quick launch | + to quit\n\n\n\n\n");
 
-        int yearsChange = 0, monthChange = 0, dayChange = 0, hourChange = 0, tenMinChange = 0;
+        int yearsChange = 0, monthsChange = 0, daysChange = 0, hoursChange = 0, minutesChange = 0;
         while (appletMainLoop()) {
             padUpdate(&pad);
             u64 kDown = padGetButtonsDown(&pad);
@@ -196,6 +201,7 @@ int main(int argc, char* argv[]) {
                 if (!toggleHBMenuPath(argv[0], &pad)) {
                     return 0;
                 }
+                break;
             }
 
             time_t currentTime;
@@ -207,10 +213,10 @@ int main(int argc, char* argv[]) {
 
             struct tm* p_tm_timeToSet = localtime(&currentTime);
             p_tm_timeToSet->tm_year += yearsChange;
-            p_tm_timeToSet->tm_mon += monthChange;
-            p_tm_timeToSet->tm_mday += dayChange;
-            p_tm_timeToSet->tm_hour += hourChange;
-            p_tm_timeToSet->tm_min += tenMinChange * 10;
+            p_tm_timeToSet->tm_mon += monthsChange;
+            p_tm_timeToSet->tm_mday += daysChange;
+            p_tm_timeToSet->tm_hour += hoursChange;
+            p_tm_timeToSet->tm_min += minutesChange;
             time_t timeToSet = mktime(p_tm_timeToSet);
 
             if (kDown & HidNpadButton_A) {
@@ -228,31 +234,55 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            if (kDown & HidNpadButton_Left) {
-                dayChange--;
-            } else if (kDown & HidNpadButton_Right) {
-                dayChange++;
-            } else if (kDown & HidNpadButton_Down) {
-                hourChange--;
+            if (kDown & HidNpadButton_Down) {
+                switch (arrow) {
+                    case 0: yearsChange--; break;
+                    case 1: monthsChange--; break;
+                    case 2: daysChange--; break;
+                    case 3: hoursChange--; break;
+                    case 4: minutesChange--; break;
+                }
             } else if (kDown & HidNpadButton_Up) {
-                hourChange++;
-            } else if (kDown & HidNpadButton_R) {
-                yearsChange--;
-            } else if (kDown & HidNpadButton_ZR) {
-                yearsChange++;
-            } else if (kDown & HidNpadButton_L) {
-                monthChange--;
-            } else if (kDown & HidNpadButton_ZL) {
-                monthChange++;
-            } else if (kDown & HidNpadButton_B) {
-                tenMinChange--;
-            } else if (kDown & HidNpadButton_X) {
-                tenMinChange++;
+                switch (arrow) {
+                    case 0: yearsChange++; break;
+                    case 1: monthsChange++; break;
+                    case 2: daysChange++; break;
+                    case 3: hoursChange++; break;
+                    case 4: minutesChange++; break;
+                }
+            } else if (kDown & (HidNpadButton_L | HidNpadButton_ZL)) {
+                switch (arrow) {
+                    case 0: yearsChange -= 10; break;
+                    case 1: monthsChange -= 3; break;
+                    case 2: daysChange -= 10; break;
+                    case 3: hoursChange -= 6; break;
+                    case 4: minutesChange -= 10; break;
+                }
+            } else if (kDown & (HidNpadButton_R | HidNpadButton_ZR)) {
+                switch (arrow) {
+                    case 0: yearsChange += 10; break;
+                    case 1: monthsChange += 3; break;
+                    case 2: daysChange += 10; break;
+                    case 3: hoursChange += 6; break;
+                    case 4: minutesChange += 10; break;
+                }
             }
 
-            char timeToSetStr[25];
-            strftime(timeToSetStr, sizeof timeToSetStr, "%c", p_tm_timeToSet);
-            printf("\rTime to set: %s", timeToSetStr);
+             if (kDown & HidNpadButton_Left) {
+                arrow = (arrow - 1 + 5) % 5;
+            } else if (kDown & HidNpadButton_Right) {
+                arrow = (arrow + 1) % 5;
+            }
+
+            char timeToSetStr[20];
+            strftime(timeToSetStr, sizeof(timeToSetStr), "%Y/%m/%d %H:%M:%S", p_tm_timeToSet);
+            printf(CONSOLE_ESC(1A)"\r%s\n", timeToSetStr);
+            char arrowStr[sizeof(timeToSetStr)];
+            memset(arrowStr, ' ', sizeof(arrowStr) - 1);
+            memset(arrowStr + arrow_pos[arrow], '^', arrow_len[arrow]);
+            arrowStr[sizeof(arrowStr) - 1] = '\0';
+            printf("%s", arrowStr);
+
             consoleUpdate(NULL);
         }
     }
