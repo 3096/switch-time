@@ -1,0 +1,51 @@
+name: Build & Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Extract version from Makefile
+      id: extract_version
+      run: |
+        APP_TITLE=$(grep -oP 'APP_TITLE\s*:=\s*\K.*' Makefile)
+        VERSION_MAJOR=$(grep -oP 'VERSION_MAJOR\s*:=\s*\K.*' Makefile)
+        VERSION_MINOR=$(grep -oP 'VERSION_MINOR\s*:=\s*\K.*' Makefile)
+        VERSION_MICRO=$(grep -oP 'VERSION_MICRO\s*:=\s*\K.*' Makefile)
+        APP_VERSION="v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}"
+        echo "::set-output name=app_title::$APP_TITLE"
+        echo "::set-output name=app_version::$APP_VERSION"
+        echo "Extracted APP_TITLE: $APP_TITLE"
+        echo "Extracted APP_VERSION: $APP_VERSION"
+      
+    - name: Build project
+      run: make
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.extract_version.outputs.app_version }}
+        release_name: ${{ steps.extract_version.outputs.app_title }} ${{ steps.extract_version.outputs.app_version }}
+        body: 'Automated release for ${{ steps.extract_version.outputs.app_version }}'
+        draft: false
+        prerelease: false
+      
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./switch-time.nro
+        asset_name: switch-time.nro
+        asset_content_type: application/octet-stream
