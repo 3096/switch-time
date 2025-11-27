@@ -49,7 +49,7 @@ VERSION_MINOR := 1
 VERSION_MICRO := 6
 
 APP_TITLE   := SwitchTime
-APP_AUTHOR  := ZHDreamer, 3096, thedax, cytraen, vonhabsbourg, izenn
+APP_AUTHOR  := 3096, thedax, ZHDreamer, cytraen, vonhabsbourg, izenn, gzk_47
 APP_VERSION := ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}
 
 #---------------------------------------------------------------------------------
