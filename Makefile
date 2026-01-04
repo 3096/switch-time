@@ -37,20 +37,61 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
+
+GIT_DESCRIBE := $(patsubst v%,%,$(shell git describe --tags --always --dirty))
+
+ifeq ($(findstring .,$(GIT_DESCRIBE)),)
+    VERSION_MAJOR := 0
+    VERSION_MINOR := 0
+    VERSION_MICRO := 1
+else
+    VERSION_MAJOR := $(word 1,$(subst ., ,$(GIT_DESCRIBE)))
+    VERSION_MINOR := $(word 2,$(subst ., ,$(GIT_DESCRIBE)))
+    VERSION_MICRO_FULL := $(word 3,$(subst ., ,$(GIT_DESCRIBE)))
+    VERSION_MICRO := $(firstword $(subst -, ,$(VERSION_MICRO_FULL)))
+endif
+
+increment = $(shell echo $$(($(1) + 1)))
+
+ifeq ($(RELEASE_TYPE),MAJOR)
+    VERSION_MAJOR := $(call increment,$(VERSION_MAJOR))
+    VERSION_MINOR := 0
+    VERSION_MICRO := 0
+endif
+
+ifeq ($(RELEASE_TYPE),MINOR)
+    VERSION_MINOR := $(call increment,$(VERSION_MINOR))
+    VERSION_MICRO := 0
+endif
+
+ifeq ($(RELEASE_TYPE),MICRO)
+    VERSION_MICRO := $(call increment,$(VERSION_MICRO))
+endif
+
+GITREV := $(shell git rev-parse --short HEAD)
+IS_DIRTY := $(findstring dirty,$(GIT_DESCRIBE))
+
+VERSION_SUFFIX := -$(GITREV)
+ifneq ($(RELEASE_TYPE),)
+    VERSION_SUFFIX := 
+else ifneq ($(GITHUB_ACTIONS),)
+    VERSION_SUFFIX := c-$(GITREV)
+else ifneq ($(IS_DIRTY),)
+    VERSION_SUFFIX := u-$(GITREV)
+else
+    VERSION_SUFFIX := w-$(GITREV)
+endif
+
+APP_VERSION := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_MICRO)$(VERSION_SUFFIX)
+APP_TITLE   := SwitchTime
+APP_AUTHOR  := 3096, thedax, ZHDreamer, cytraen, vonhabsbourg, izenn, gzk_47
+
 TARGET		:=	switch-time
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 #ROMFS	:=	romfs
-
-VERSION_MAJOR := 0
-VERSION_MINOR := 1
-VERSION_MICRO := 6
-
-APP_TITLE   := SwitchTime
-APP_AUTHOR  := 3096, thedax, ZHDreamer, cytraen, vonhabsbourg, izenn, gzk_47
-APP_VERSION := ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -163,7 +204,7 @@ ifneq ($(ROMFS),)
 	export NROFLAGS += --romfsdir=$(CURDIR)/$(ROMFS)
 endif
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) version clean all
 
 #---------------------------------------------------------------------------------
 all: $(BUILD)
@@ -181,6 +222,10 @@ else
 	@rm -fr $(BUILD) $(TARGET).nsp $(TARGET).nso $(TARGET).npdm $(TARGET).elf
 endif
 
+
+#---------------------------------------------------------------------------------
+version:
+	@echo $(APP_VERSION)
 
 #---------------------------------------------------------------------------------
 else
