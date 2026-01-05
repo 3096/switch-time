@@ -6,6 +6,8 @@ Change NetworkSystemClock
 - [@Cytraen](https://github.com/Cytraen) for changing the servers to cloudfare.
 - [@vonhabsbourg](https://github.com/vonhabsbourg) for adding month and year change.
 - [@izenn](https://github.com/izenn) for the <a href="https://www.flaticon.com/free-icons/watch" title="watch icons">watch icon created by Freepik - Flaticon</a>.
+- [@ZHDreamer](https://github.com/3096/switch-time/commits?author=ZHDreamer) for adding left-right navigable interaction.
+- [@gzk47](https://github.com/3096/switch-time/commits?author=gzk47) for starting the GH Actions CI for this project.
 
 ## Functionality
 - Change time by day/hour
